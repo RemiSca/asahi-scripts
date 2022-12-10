@@ -1,0 +1,49 @@
+#!/bin/sh
+
+PREREQ="udev"
+
+prereqs() { echo "$PREREQ"; }
+
+case $1 in
+prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+. /scripts/functions
+
+log_begin_msg ":: Asahi: Copying vendor firmware to tmpfs under root filesystem"
+
+mount -t tmpfs -o size=64m tmpfs ${rootmnt}/lib/firmware/vendor
+cp -r /vendorfw/* /vendorfw/.vendorfw.manifest ${rootmnt}/lib/firmware/vendor
+
+log_end_msg
+
+exit 0
+
+
+
+#log_begin_msg ":: RSC: mount -n -o move /vendorfw ${rootmnt}/usr/lib/firmware/vendor\\n"
+# vendor directory created in initramfs (asahi hook)
+#mkdir -p ${rootmnt}/usr/lib/firmware/vendor
+#log_warning_msg ":: RSC: /usr/lib/firmware"
+#ls /vendorfw
+
+#log_warning_msg ":: RSC: ${rootmnt}/usr/lib/firmware"
+#ls ${rootmnt}/usr/lib/firmware
+
+# mount -n -o move used by initramfs at the end
+#mount -n -o move /vendorfw ${rootmnt}/usr/lib/firmware/vendor
+
+# Below is the command provided by Debian documentation
+# https://wiki.debian.org/systemd
+#mount --bind --make-rslave -t tmpfs /vendorfw ${rootmnt}/usr/lib/firmware/vendor
+#mount -n -o rslave /vendorfw ${rootmnt}/usr/lib/firmware/vendor
+#mount -h
+
+#mkdir -p ${rootmnt}/lib/firmware/vendor
+#ls ${rootmnt}/lib/firmware/vendor/*
+#mount -n -o move ${rootmnt}/lib/firmware/vendor /usr/lib/firmware/vendor
+
+#mount -t tmpfs vendorfw /root/lib/firmware/vendor

@@ -1,0 +1,68 @@
+#!/bin/sh
+PREREQ=""
+prereqs()
+{
+	echo "$PREREQ"
+}
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+# Begin real processing below this line
+
+copy_exec /usr/bin/cp /usr/bin
+copy_exec /usr/bin/grep /usr/bin
+copy_exec /usr/bin/cut /usr/bin
+copy_exec /usr/bin/sed /usr/bin
+copy_exec /usr/bin/seq /usr/bin
+copy_exec /usr/sbin/findfs /usr/sbin
+
+prepend_earlyinitramfs /boot/efi/vendorfw/firmware.cpio
+ln -s /vendorfw ${DESTDIR}/usr/lib/firmware/vendor
+
+# For NVMe & SMC
+manual_add_modules apple-mailbox
+
+# For NVMe
+manual_add_modules nvme-apple
+
+# For USB and HID
+manual_add_modules pinctrl-apple-gpio
+
+# SMC core
+manual_add_modules macsmc
+manual_add_modules macsmc-rtkit
+
+# For USB
+manual_add_modules i2c-apple
+manual_add_modules tps6598x
+manual_add_modules apple-dart
+manual_add_modules dwc3
+manual_add_modules dwc3-of-simple
+manual_add_modules nvmem-apple-efuses
+manual_add_modules phy-apple-atc
+manual_add_modules xhci-pci
+manual_add_modules pcie-apple
+manual_add_modules gpio_macsmc
+
+# For HID
+manual_add_modules spi-apple
+manual_add_modules spi-hid-apple
+manual_add_modules spi-hid-apple-of
+
+# For RTC
+manual_add_modules rtc-macsmc
+manual_add_modules simple-mfd-spmi
+manual_add_modules spmi-apple-controller
+manual_add_modules nvmem_spmi_mfd
+
+# For MTP HID
+manual_add_modules apple-dockchannel
+manual_add_modules dockchannel-hid
+manual_add_modules apple-rtkit-helper
+

@@ -1,0 +1,68 @@
+#!/bin/sh
+
+PREREQ=""
+prereqs()
+{
+        echo "$PREREQ"
+}
+case $1 in
+# get pre-requisites
+prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+. /scripts/functions
+
+if [ -e /vendorfw ]; then
+    log_success_msg ":: Asahi: Vendor firmware was loaded by the bootloader"
+    return 0
+fi
+
+if [ ! -e /proc/device-tree/chosen/asahi,efi-system-partition ]; then
+    log_failure_msg ":: Asahi: Missing asahi,efi-system-partition variable, firmware will not be loaded!"
+    return 1
+fi
+
+log_begin_msg ":: Asahi: Triggering early load of NVMe modules"
+load_modules apple-mailbox
+load_modules nvme-apple
+log_end_msg
+
+log_begin_msg ":: Asahi: Waiting for Apple NVMe driver"
+for i in $(seq 0 50); do
+    [ -e /sys/bus/platform/drivers/nvme-apple/*.nvme/nvme/nvme*/nvme*n1/ ] && break
+    sleep 0.1
+done
+log_end_msg
+
+if [ ! -e /sys/bus/platform/drivers/nvme-apple/*.nvme/nvme/nvme*/nvme*n1/ ]; then
+    log_failure_msg "Timed out waiting for NVMe device"
+    return 1
+fi
+
+# If the above exists, hopefully the /dev device exists and this will work
+
+log_begin_msg ":: Asahi: Unpacking vendor firmware into initramfs"
+
+VENDORFW="/run/.system-efi/vendorfw/"
+
+(
+    . /scripts/asahi-functions.sh
+    mount_sys_esp /run/.system-efi
+)
+
+if [ ! -e "$VENDORFW/firmware.cpio" ]; then
+    log_failure_msg ":: Asahi: Vendor firmware not available in ESP!"
+    umount /run/.system-efi
+    return 1
+fi
+
+( cd /; cpio -i < "$VENDORFW/firmware.cpio" )
+log_end_msg
+umount /run/.system-efi
+
+log_success_msg ":: Asahi: Vendor firmware unpacked successfully"
+
+exit 0
